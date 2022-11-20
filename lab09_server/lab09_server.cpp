@@ -5,6 +5,10 @@
 #include <string>
 #define USERS 5
 using namespace std;
+
+/// <summary>
+/// TEST IRA
+/// </summary>
 HANDLE hMutex;
 HANDLE myH = CreateMutex(0, FALSE, (LPCWSTR)"Globa\\myH");
 int counter = 0;
