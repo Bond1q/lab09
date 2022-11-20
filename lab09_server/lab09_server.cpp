@@ -5,8 +5,10 @@
 #include <string>
 #include <sstream>
 
-#define USERS 5
 #define SIZE 50
+#define USERS 5
+// крч можна придумати вихід з циклу (вайл тру)
+// бо #define USERS 5 не файно
 
 using namespace std;
 
@@ -32,11 +34,12 @@ DWORD WINAPI MassageChecker(__in LPVOID params) {
     }
     return 0;
 }
+
 int main(int argc, const char** argv) {
 
 
     // ira -------------------------------------------
-    wcout << "Creating an instance of a named pipe..." << endl;
+    wcout << "Creating a instance of a pipe..." << "\n";
 
     HANDLE pipe = CreateNamedPipe(
         L"\\\\.\\pipe\\my_pipe",
@@ -49,84 +52,97 @@ int main(int argc, const char** argv) {
         NULL
     );
 
-    if (pipe == NULL || pipe == INVALID_HANDLE_VALUE) {
-        wcout << "Failed to create outbound pipe instance.";
-        system("pause");
+    BOOL result = pipe != NULL && pipe != INVALID_HANDLE_VALUE;
+    if (!result) {
+        wcout << "Failed in a pipe creating.";
         return 1;
     }
 
-    wcout << "Waiting for a client to connect to the pipe..." << endl;
-    for (int us = 0; us < USERS; us++) {
-        BOOL result = ConnectNamedPipe(pipe, NULL);
+   // while (true) 
+    for(int u = 0; u < USERS; u++)
+    {
+        wcout << "Waiting for users..." << "\n";
+        result = ConnectNamedPipe(
+            pipe,
+            NULL
+        );
         if (!result) {
-            wcout << "Failed to make connection on named pipe." << endl;
+            wcout << "Failed to connect to pipe." << "\n";
             CloseHandle(pipe);
-            system("pause");
             return 1;
         }
 
-        wcout << "Reading name from client..." << endl;
+        wcout << "Reading user name..." << "\n";
         wchar_t buffer[128];
-        DWORD numBytesRead = 0;
+        DWORD bytesRead = 0;
         result = ReadFile(
             pipe,
             buffer,
             127 * sizeof(wchar_t),
-            &numBytesRead,
+            &bytesRead,
             NULL
         );
-        const wchar_t* data = L"Your name successfully added";
-        if (result) {
-            buffer[numBytesRead / sizeof(wchar_t)] = '\0';
-            wstring ws(buffer);
-            string name(ws.begin(), ws.end());
-            ifstream myfileRead;
-            myfileRead.open("Users.txt");
-            string fileData;
+        if (!result) {
+            wcout << "Failed to read name from the pipe." << "\n";
+            CloseHandle(pipe);
+            return 1;
+        }
+
+        wcout << "Number of read bytes: " << bytesRead << "\n";
+
+        buffer[bytesRead / sizeof(wchar_t)] = '\0';
+        wstring ws(buffer);
+        string name(ws.begin(), ws.end());
+        ifstream usersFile;
+        usersFile.open("Users.txt");
+
+        string fileData;
+        string bData = "Welcome";
+
+        int index = 0;
+        if (usersFile.is_open())
+        {
+            bool found = false;
             string line;
-
-            int index = 0;
-            if (myfileRead.is_open())
+            getline(usersFile, line);
+            while (usersFile)
             {
-                getline(myfileRead, line);
-                while (myfileRead)
-                {
-                    fileData += line;
-                    getline(myfileRead, line);
+                if (line == name) {
+                    bData += " back";
+                    found = true;
+                    break;
                 }
+                getline(usersFile, line);
             }
-            myfileRead.close();
+            usersFile.close();
 
-
-            if (fileData.find(name) == std::string::npos) {
-                ofstream myfile;
-                myfile.open("Users.txt", ios_base::app);
-                myfile << name + "\n";
-                myfile.close();
+            if (!found) {
+                ofstream usersFile;
+                usersFile.open("Users.txt", ios_base::app);
+                usersFile << name + "\n";
+                usersFile.close();
             }
-            else
-                data = L"You are already registered:)";
+        }
 
-        }
-        else {
-            wcout << "Failed to read name from the pipe." << endl;
-        }
+        bData += ", " + name;
+        wstring widestr = wstring(bData.begin(), bData.end());
+        const wchar_t* data = widestr.c_str();
+
         wcout << "Sending data to pipe..." << endl;
-        DWORD numBytesWritten = 0;
+        DWORD bytesWritten = 0;
         result = WriteFile(
             pipe,
             data,
             wcslen(data) * sizeof(wchar_t),
-            &numBytesWritten,
+            &bytesWritten,
             NULL
         );
 
-        if (result) {
-            wcout << "Number of bytes sent: " << numBytesWritten << endl;
-        }
-        else {
-            wcout << "Failed to send data." << endl;
-        }
+        if (result) 
+            wcout << "Number of written bytes: " << bytesWritten << "\n";
+        else 
+            wcout << "Failed to send data." << "\n";
+       
         // ira -------------------------------------------
 
 
@@ -165,18 +181,18 @@ int main(int argc, const char** argv) {
 
         wcout << "Reading client message..." << endl;
         buffer[128];
-        numBytesRead = 0;
+        bytesRead = 0;
         result = ReadFile(
             pipe,
             buffer,
             127 * sizeof(wchar_t),
-            &numBytesRead,
+            &bytesRead,
             NULL
         );
 
         if (result) {
-            buffer[numBytesRead / sizeof(wchar_t)] = '\0';
-            wcout << "Number of bytes read: " << numBytesRead << endl;
+            buffer[bytesRead / sizeof(wchar_t)] = '\0';
+            wcout << "Number of bytes read: " << bytesRead << endl;
             wcout << "Message: " << buffer << endl;
         }
         else {
@@ -214,17 +230,17 @@ int main(int argc, const char** argv) {
         else
             data = L"Too many prohibited words in your message!";
 
-        numBytesWritten = 0;
+        bytesWritten = 0;
         result = WriteFile(
             pipe,
             data,
             wcslen(data) * sizeof(wchar_t),
-            &numBytesWritten,
+            &bytesWritten,
             NULL
         );
 
         if (result) {
-            wcout << "Number of bytes sent: " << numBytesWritten << endl;
+            wcout << "Number of bytes sent: " << bytesWritten << endl;
         }
         else {
             wcout << "Failed to send data." << endl;
@@ -239,6 +255,9 @@ int main(int argc, const char** argv) {
         }
 
         // misha -------------------------------------------
+
+
+
 
     }
     CloseHandle(pipe);
