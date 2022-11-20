@@ -3,7 +3,11 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include <sstream>
+
 #define USERS 5
+#define SIZE 50
+
 using namespace std;
 
 /// <summary>
@@ -13,7 +17,8 @@ using namespace std;
 HANDLE hMutex;
 HANDLE myH = CreateMutex(0, FALSE, (LPCWSTR)"Globa\\myH");
 int counter = 0;
-string prohibitedWords[] = { "drug", "weapon", "terrorist", "attack", "politician", "crime", "c++" };
+
+string prohibitedWords[SIZE];
 int prohibitedAmount = 3;
 struct pr {
     vector <string> words;
@@ -32,6 +37,35 @@ DWORD WINAPI MassageChecker(__in LPVOID params) {
     return 0;
 }
 int main(int argc, const char** argv) {
+
+    ifstream wordsData;
+    string line;
+    string wordsStr = "";
+    wordsData.open("words.txt");
+    int wordsArrSize = 0;
+
+    if (wordsData.is_open())
+    {
+        getline(wordsData, line);
+        while (wordsData)
+        {
+            wordsStr += line + " ";
+            getline(wordsData, line);
+            wordsArrSize++;
+        }
+    }
+    wordsData.close();
+    line = "";
+
+    //prohibitedWords = new string[wordsArrSize];
+
+    int iter = 0;
+    stringstream ssin(wordsStr);
+    while (ssin.good() && iter < wordsArrSize) {
+        ssin >> prohibitedWords[iter];
+        ++iter;
+    }
+
     wcout << "Creating an instance of a named pipe..." << endl;
 
     HANDLE pipe = CreateNamedPipe(
@@ -79,7 +113,7 @@ int main(int argc, const char** argv) {
             ifstream myfileRead;
             myfileRead.open("Users.txt");
             string fileData;
-            string line;
+            //string line;
 
             int index = 0;
             if (myfileRead.is_open())
@@ -92,6 +126,7 @@ int main(int argc, const char** argv) {
                 }
             }
             myfileRead.close();
+
 
             if (fileData.find(name) == std::string::npos) {
                 ofstream myfile;
