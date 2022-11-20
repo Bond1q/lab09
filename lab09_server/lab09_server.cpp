@@ -8,6 +8,7 @@ using namespace std;
 
 /// <summary>
 /// TEST IRA
+/// TEST IRA 2
 /// </summary>
 HANDLE hMutex;
 HANDLE myH = CreateMutex(0, FALSE, (LPCWSTR)"Globa\\myH");
