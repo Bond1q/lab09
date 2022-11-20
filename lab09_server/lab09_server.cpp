@@ -10,10 +10,6 @@
 
 using namespace std;
 
-/// <summary>
-/// TEST IRA
-/// TEST IRA 2
-/// </summary>
 HANDLE hMutex;
 HANDLE myH = CreateMutex(0, FALSE, (LPCWSTR)"Globa\\myH");
 int counter = 0;
@@ -38,34 +34,8 @@ DWORD WINAPI MassageChecker(__in LPVOID params) {
 }
 int main(int argc, const char** argv) {
 
-    ifstream wordsData;
-    string line;
-    string wordsStr = "";
-    wordsData.open("words.txt");
-    int wordsArrSize = 0;
 
-    if (wordsData.is_open())
-    {
-        getline(wordsData, line);
-        while (wordsData)
-        {
-            wordsStr += line + " ";
-            getline(wordsData, line);
-            wordsArrSize++;
-        }
-    }
-    wordsData.close();
-    line = "";
-
-    //prohibitedWords = new string[wordsArrSize];
-
-    int iter = 0;
-    stringstream ssin(wordsStr);
-    while (ssin.good() && iter < wordsArrSize) {
-        ssin >> prohibitedWords[iter];
-        ++iter;
-    }
-
+    // ira -------------------------------------------
     wcout << "Creating an instance of a named pipe..." << endl;
 
     HANDLE pipe = CreateNamedPipe(
@@ -113,7 +83,7 @@ int main(int argc, const char** argv) {
             ifstream myfileRead;
             myfileRead.open("Users.txt");
             string fileData;
-            //string line;
+            string line;
 
             int index = 0;
             if (myfileRead.is_open())
@@ -141,7 +111,6 @@ int main(int argc, const char** argv) {
         else {
             wcout << "Failed to read name from the pipe." << endl;
         }
-
         wcout << "Sending data to pipe..." << endl;
         DWORD numBytesWritten = 0;
         result = WriteFile(
@@ -158,6 +127,41 @@ int main(int argc, const char** argv) {
         else {
             wcout << "Failed to send data." << endl;
         }
+        // ira -------------------------------------------
+
+
+
+
+        // misha -------------------------------------------
+        ifstream wordsData;
+        string line;
+        string wordsStr = "";
+        wordsData.open("words.txt");
+        int wordsArrSize = 0;
+
+        if (wordsData.is_open())
+        {
+            getline(wordsData, line);
+            while (wordsData)
+            {
+                wordsStr += line + " ";
+                getline(wordsData, line);
+                wordsArrSize++;
+            }
+        }
+        wordsData.close();
+        line = "";
+
+        //prohibitedWords = new string[wordsArrSize];
+
+        int iter = 0;
+        stringstream ssin(wordsStr);
+        while (ssin.good() && iter < wordsArrSize) {
+            ssin >> prohibitedWords[iter];
+            ++iter;
+        }
+
+        // -------------------------------------------
 
         wcout << "Reading client message..." << endl;
         buffer[128];
@@ -233,6 +237,9 @@ int main(int argc, const char** argv) {
         {
             printf("Disconnect successful\n");
         }
+
+        // misha -------------------------------------------
+
     }
     CloseHandle(pipe);
 
