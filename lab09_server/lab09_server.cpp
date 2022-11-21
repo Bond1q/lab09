@@ -170,6 +170,8 @@ int main(int argc, const char** argv) {
             ++iter;
         }
 
+        iter = 0;
+
         cout << "Reading message from client..." << endl;
         buffer[128];
         bytesRead = 0;
@@ -189,17 +191,27 @@ int main(int argc, const char** argv) {
         else {
             cout << "Failed to read data from the pipe." << endl;
         }
-        string message(buffer);
+
+
         vector<string> words{};
-        string delimiter = " ";
-        size_t pos = 0;
-        string token;
-        while ((pos = message.find(delimiter)) != string::npos) {
-            token = message.substr(0, pos);
-            words.push_back(token);
-            message.erase(0, pos + delimiter.length());
+        
+
+        ssin.str(buffer);
+        wordsArrSize = 0;
+
+        for(int i = 0; i < bytesRead; i++)
+            if (buffer[i] == ' ')
+            {
+                ++wordsArrSize;
+            }
+
+        while (ssin.good() && iter < wordsArrSize) {
+            ssin >> ssinBufStr;
+            words.push_back(ssinBufStr);
+            ssinBufStr = "";
+            ++iter;
         }
-        words.push_back(message);
+
 
 
         HANDLE* h = new HANDLE[prohibitedWords.size()];

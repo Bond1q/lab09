@@ -101,6 +101,6 @@ int main()
     }
     CloseHandle(pipe);
     cout << "Done." << endl;
-    //system("pause");
+    system("pause");
     return 0;
 }
