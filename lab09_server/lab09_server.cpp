@@ -78,7 +78,7 @@ int main(int argc, const char** argv) {
         result = ReadFile(
             pipe,
             buffer,
-            127 * sizeof(char),
+            127,
             &bytesRead,
             NULL
         );
@@ -125,24 +125,22 @@ int main(int argc, const char** argv) {
         }
 
         bData += ", " + name;
-        cout << bData <<" log\n";
-        string widestr = string(bData.begin(), bData.end());
-        const char* data = widestr.c_str();
+        
 
-        wcout << "Sending data to pipe..." << endl;
+        cout << "Sending data to pipe..." << endl;
         DWORD bytesWritten = 0;
         result = WriteFile(
             pipe,
-            data,
-            sizeof(data)/sizeof(char) * sizeof(wchar_t),
+            bData.c_str(),
+            strlen(bData.c_str()),
             &bytesWritten,
             NULL
         );
 
         if (result) 
-            wcout << "Number of written bytes: " << bytesWritten << "\n";
+            cout << "Number of written bytes: " << bytesWritten << "\n";
         else 
-            wcout << "Failed to send data." << "\n";
+            cout << "Failed to send data." << "\n";
        
         // ira -------------------------------------------
 
@@ -180,24 +178,24 @@ int main(int argc, const char** argv) {
 
         // -------------------------------------------
 
-        wcout << "Reading client message..." << endl;
+        cout << "Reading client message..." << endl;
         buffer[128];
         bytesRead = 0;
         result = ReadFile(
             pipe,
             buffer,
-            127 * sizeof(wchar_t),
+            127,
             &bytesRead,
             NULL
         );
 
         if (result) {
-            buffer[bytesRead / sizeof(wchar_t)] = '\0';
-            wcout << "Number of bytes read: " << bytesRead << endl;
-            wcout << "Message: " << buffer << endl;
+            buffer[bytesRead / sizeof(char)] = '\0';
+            cout << "Number of bytes read: " << bytesRead << endl;
+            cout << "Message: " << buffer << endl;
         }
         else {
-            wcout << "Failed to read data from the pipe." << endl;
+            cout << "Failed to read data from the pipe." << endl;
         }
         string ws1(buffer);
         string message(ws1.begin(), ws1.end());
@@ -225,17 +223,17 @@ int main(int argc, const char** argv) {
         WaitForMultipleObjects(sizeof(prohibitedWords) / sizeof(*prohibitedWords), h, FALSE, INFINITE);
 
 
-        wcout << "Sending data to pipe..." << endl;
+        cout << "Sending data to pipe..." << endl;
         if (counter < prohibitedAmount)
-            data = buffer;
+            bData = buffer;
         else
-            data = "Too many prohibited words in your message!";
+            bData = "Too many prohibited words in your message!";
 
         bytesWritten = 0;
         result = WriteFile(
             pipe,
-            data,
-            sizeof(data) / sizeof(char) * sizeof(wchar_t),
+            bData.c_str(),
+            strlen(bData.c_str()),
             &bytesWritten,
             NULL
         );
