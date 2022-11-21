@@ -5,31 +5,29 @@
 #include <string>
 #include <sstream>
 
-#define SIZE 50
 #define USERS 5
-// крч можна придумати вихід з циклу (вайл тру)
-// бо #define USERS 5 не файно
+#define PROHIBITED_AMOUNT 3
 
 using namespace std;
 
-HANDLE hMutex;
-HANDLE myH = CreateMutex(0, FALSE, (LPCWSTR)"Globa\\myH");
+HANDLE hMutex = CreateMutex(0, FALSE, (LPCWSTR)"Globa\\myH");
 int counter = 0;
 
-string prohibitedWords[SIZE];
-int prohibitedAmount = 3;
-struct pr {
+vector <string> prohibitedWords;
+
+struct param {
     vector <string> words;
     string wordToCheck;
 };
-DWORD WINAPI MassageChecker(__in LPVOID params) {
 
-    pr parameters = *(pr*)params;
+DWORD WINAPI MassageReview(__in LPVOID params) {
+
+    param parameters = *(param*)params;
     for (string word : parameters.words) {
         if (word.compare(parameters.wordToCheck) == 0) {
-            WaitForSingleObject(myH, INFINITE);
+            WaitForSingleObject(hMutex, INFINITE);
             counter++;
-            ReleaseMutex(myH);
+            ReleaseMutex(hMutex);
         }
     }
     return 0;
@@ -39,7 +37,7 @@ int main(int argc, const char** argv) {
 
 
     // ira -------------------------------------------
-    wcout << "Creating a instance of a pipe..." << "\n";
+    cout << "Creating a instance of a pipe..." << "\n";
 
     HANDLE pipe = CreateNamedPipe(
         L"\\\\.\\pipe\\my_pipe",
@@ -54,25 +52,23 @@ int main(int argc, const char** argv) {
 
     BOOL result = pipe != NULL && pipe != INVALID_HANDLE_VALUE;
     if (!result) {
-        wcout << "Failed in a pipe creating.";
+        cout << "Failed in a pipe creating.";
         return 1;
     }
-
-   // while (true) 
     for(int u = 0; u < USERS; u++)
     {
-        wcout << "Waiting for users..." << "\n";
+        cout << "Waiting for users..." << "\n";
         result = ConnectNamedPipe(
             pipe,
             NULL
         );
         if (!result) {
-            wcout << "Failed to connect to pipe." << "\n";
+            cout << "Failed to connect to pipe." << "\n";
             CloseHandle(pipe);
             return 1;
         }
 
-        wcout << "Reading user name..." << "\n";
+        cout << "Reading user name..." << "\n";
         char buffer[128];
         DWORD bytesRead = 0;
         result = ReadFile(
@@ -83,16 +79,15 @@ int main(int argc, const char** argv) {
             NULL
         );
         if (!result) {
-            wcout << "Failed to read name from the pipe." << "\n";
+            cout << "Failed to read name from the pipe." << "\n";
             CloseHandle(pipe);
             return 1;
         }
 
-        wcout << "Number of read bytes: " << bytesRead << "\n";
+        cout << "Number of read bytes: " << bytesRead << "\n";
 
-        buffer[bytesRead / sizeof(char)] = '\0';
-        string ws(buffer);
-        string name(ws.begin(), ws.end());
+        buffer[bytesRead] = '\0';
+        string name(buffer);
         ifstream usersFile;
         usersFile.open("Users.txt");
 
@@ -124,10 +119,9 @@ int main(int argc, const char** argv) {
             }
         }
 
-        bData += ", " + name;
-        
+        bData += ", " + name;        
 
-        cout << "Sending data to pipe..." << endl;
+        cout << "Sending data to pipe..." << "\n";
         DWORD bytesWritten = 0;
         result = WriteFile(
             pipe,
@@ -143,8 +137,6 @@ int main(int argc, const char** argv) {
             cout << "Failed to send data." << "\n";
        
         // ira -------------------------------------------
-
-
 
 
         // misha -------------------------------------------
@@ -167,18 +159,18 @@ int main(int argc, const char** argv) {
         wordsData.close();
         line = "";
 
-        //prohibitedWords = new string[wordsArrSize];
-
         int iter = 0;
         stringstream ssin(wordsStr);
+
+        string ssinBufStr;
         while (ssin.good() && iter < wordsArrSize) {
-            ssin >> prohibitedWords[iter];
+            ssin >> ssinBufStr;
+            prohibitedWords.push_back(ssinBufStr);
+            ssinBufStr = "";
             ++iter;
         }
 
-        // -------------------------------------------
-
-        cout << "Reading client message..." << endl;
+        cout << "Reading message from client..." << endl;
         buffer[128];
         bytesRead = 0;
         result = ReadFile(
@@ -190,15 +182,14 @@ int main(int argc, const char** argv) {
         );
 
         if (result) {
-            buffer[bytesRead / sizeof(char)] = '\0';
-            cout << "Number of bytes read: " << bytesRead << endl;
+            buffer[bytesRead] = '\0';
+            cout << "Number of read bytes: " << bytesRead << endl;
             cout << "Message: " << buffer << endl;
         }
         else {
             cout << "Failed to read data from the pipe." << endl;
         }
-        string ws1(buffer);
-        string message(ws1.begin(), ws1.end());
+        string message(buffer);
         vector<string> words{};
         string delimiter = " ";
         size_t pos = 0;
@@ -210,21 +201,22 @@ int main(int argc, const char** argv) {
         }
         words.push_back(message);
 
-        HANDLE* h = new HANDLE[sizeof(prohibitedWords) / sizeof(*prohibitedWords)];
-        pr* par = new pr[sizeof(prohibitedWords) / sizeof(*prohibitedWords)];
+
+        HANDLE* h = new HANDLE[prohibitedWords.size()];
+        param* par = new param[prohibitedWords.size()];
         int i = 0;
         counter = 0;
         for (string w : prohibitedWords) {
             DWORD threadID;
             par[i].words = words;
             par[i].wordToCheck = w;
-            h[i] = CreateThread(0, 0, (LPTHREAD_START_ROUTINE)MassageChecker, (LPVOID)&par[i++], NULL, &threadID);
+            h[i] = CreateThread(0, 0, (LPTHREAD_START_ROUTINE)MassageReview, (LPVOID)&par[i++], NULL, &threadID);
         }
-        WaitForMultipleObjects(sizeof(prohibitedWords) / sizeof(*prohibitedWords), h, FALSE, INFINITE);
+        WaitForMultipleObjects(prohibitedWords.size(), h, FALSE, INFINITE);
 
 
         cout << "Sending data to pipe..." << endl;
-        if (counter < prohibitedAmount)
+        if (counter < PROHIBITED_AMOUNT)
             bData = buffer;
         else
             bData = "Too many prohibited words in your message!";
@@ -239,18 +231,18 @@ int main(int argc, const char** argv) {
         );
 
         if (result) {
-            wcout << "Number of bytes sent: " << bytesWritten << endl;
+            cout << "Number of bytes sent: " << bytesWritten << endl;
         }
         else {
-            wcout << "Failed to send data." << endl;
+            cout << "Failed to send data." << endl;
         }
         if (!DisconnectNamedPipe(pipe))
         {
-            printf("Disconnect failed %d\n", GetLastError());
+            cout << "Disconnect failed %d " << GetLastError() << endl;
         }
         else
         {
-            printf("Disconnect successful\n");
+            cout <<  "Disconnect successful" << endl;
         }
 
         // misha -------------------------------------------
@@ -260,8 +252,7 @@ int main(int argc, const char** argv) {
 
     }
     CloseHandle(pipe);
-
-    wcout << "Done." << endl;
+    cout << "Done." << endl;
 
     system("pause");
     return 0;
