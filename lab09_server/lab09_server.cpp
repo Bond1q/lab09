@@ -73,12 +73,12 @@ int main(int argc, const char** argv) {
         }
 
         wcout << "Reading user name..." << "\n";
-        wchar_t buffer[128];
+        char buffer[128];
         DWORD bytesRead = 0;
         result = ReadFile(
             pipe,
             buffer,
-            127 * sizeof(wchar_t),
+            127 * sizeof(char),
             &bytesRead,
             NULL
         );
@@ -90,8 +90,8 @@ int main(int argc, const char** argv) {
 
         wcout << "Number of read bytes: " << bytesRead << "\n";
 
-        buffer[bytesRead / sizeof(wchar_t)] = '\0';
-        wstring ws(buffer);
+        buffer[bytesRead / sizeof(char)] = '\0';
+        string ws(buffer);
         string name(ws.begin(), ws.end());
         ifstream usersFile;
         usersFile.open("Users.txt");
@@ -125,15 +125,16 @@ int main(int argc, const char** argv) {
         }
 
         bData += ", " + name;
-        wstring widestr = wstring(bData.begin(), bData.end());
-        const wchar_t* data = widestr.c_str();
+        cout << bData <<" log\n";
+        string widestr = string(bData.begin(), bData.end());
+        const char* data = widestr.c_str();
 
         wcout << "Sending data to pipe..." << endl;
         DWORD bytesWritten = 0;
         result = WriteFile(
             pipe,
             data,
-            wcslen(data) * sizeof(wchar_t),
+            sizeof(data)/sizeof(char) * sizeof(wchar_t),
             &bytesWritten,
             NULL
         );
@@ -198,7 +199,7 @@ int main(int argc, const char** argv) {
         else {
             wcout << "Failed to read data from the pipe." << endl;
         }
-        wstring ws1(buffer);
+        string ws1(buffer);
         string message(ws1.begin(), ws1.end());
         vector<string> words{};
         string delimiter = " ";
@@ -228,13 +229,13 @@ int main(int argc, const char** argv) {
         if (counter < prohibitedAmount)
             data = buffer;
         else
-            data = L"Too many prohibited words in your message!";
+            data = "Too many prohibited words in your message!";
 
         bytesWritten = 0;
         result = WriteFile(
             pipe,
             data,
-            wcslen(data) * sizeof(wchar_t),
+            sizeof(data) / sizeof(char) * sizeof(wchar_t),
             &bytesWritten,
             NULL
         );
