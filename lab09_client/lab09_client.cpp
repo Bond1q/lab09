@@ -27,77 +27,80 @@ int main()
         }
         else
             break;
-        wcout << "Failed to connect to pipe." << endl;
+        cout << "Failed to connect to th." << endl;
 
         system("pause");
         return 1;
 
     }
     // Sending name to server 
-    wcout << "Enter your name:" << endl;
+    cout << "Hello, you are on forum!\nPlease enter your name:" << endl;
     string name;
     getline(cin, name);
-    wstring widestr = wstring(name.begin(), name.end());
-    const wchar_t* data = widestr.c_str();
+    //wstring widestr = wstring(name.begin(), name.end());
+    //const wchar_t* data = widestr.c_str();
     DWORD numBytesWritten = 0;
     BOOL result = WriteFile(
         pipe,
-        data,
-        wcslen(data) * sizeof(wchar_t),
+        name.c_str(),
+        strlen(name.c_str()),
+
         &numBytesWritten,
         NULL
     );
 
-    wchar_t buffer[128];
+    char buffer[1000];
+    string data;
     DWORD numBytesRead = 0;
     result = ReadFile(
         pipe,
         buffer,
-        127 * sizeof(wchar_t),
+        1000,
         &numBytesRead,
         NULL
     );
 
     if (result) {
-        buffer[numBytesRead / sizeof(wchar_t)] = '\0';
-        wcout << buffer << endl;
+        buffer[numBytesRead] = '\0';
+        cout << buffer << endl;
     }
     else {
-        wcout << "Failed to read data from the pipe." << endl;
+        cout << "Cannot get data from server." << endl;
     }
 
-    wcout << "Enter your message:" << endl;
-    string data1;
-    getline(cin, data1);
-    widestr = wstring(data1.begin(), data1.end());
-    data = widestr.c_str();
+
+    cout << "Enter your message:" << endl;
+    string message;
+    getline(cin, message);
+    //widestr = wstring(message.begin(), message.end());
+    //data = widestr.c_str();
     numBytesWritten = 0;
     result = WriteFile(
         pipe,
-        data,
-        wcslen(data) * sizeof(wchar_t),
+        message.c_str(),
+        strlen(message.c_str()),
         &numBytesWritten,
         NULL
     );
 
-    buffer[128];
+    //buffer[128];
     numBytesRead = 0;
     result = ReadFile(
         pipe,
         buffer,
-        127 * sizeof(wchar_t),
+        1000,
         &numBytesRead,
         NULL
     );
     if (result) {
-        buffer[numBytesRead / sizeof(wchar_t)] = '\0';
-        wcout << buffer << endl;
+        buffer[numBytesRead] = '\0';
+        cout << buffer << endl;
     }
     else {
-        wcout << "Failed to read data from the pipe." << endl;
+        cout << "Cannot get data from server." << endl;
     }
     CloseHandle(pipe);
-    wcout << "Done." << endl;
-    system("pause");
+    cout << "Done." << endl;
+    //system("pause");
     return 0;
 }
