@@ -2,11 +2,82 @@
 #include <fstream>
 #include <string>
 #include <windows.h>
-#include <tchar.h>
 using namespace std;
+
+bool connectToServer(HANDLE &pipe);
+
 int main()
 {
-    HANDLE pipe;
+    HANDLE pipe = NULL;
+    bool isConnected = connectToServer(pipe);
+    if (!isConnected) return 1;
+
+    cout << "Hello, you are on forum!\nPlease enter your name:" << endl;
+    string name;
+    getline(cin, name);
+    DWORD numBytesWritten = 0;
+    BOOL result = WriteFile(
+        pipe,
+        name.c_str(),
+        strlen(name.c_str()),
+        &numBytesWritten,
+        NULL
+    );
+
+    char serverText[1000];
+    string data;
+    DWORD numBytesRead = 0;
+    result = ReadFile(
+        pipe,
+        serverText,
+        1000,
+        &numBytesRead,
+        NULL
+    );
+
+    if (result) {
+        serverText[numBytesRead] = '\0';
+        cout << serverText << endl;
+    }
+    else {
+        cout << "Cannot get data from server." << endl;
+    }
+
+
+    cout << "Enter your message:" << endl;
+    string message;
+    getline(cin, message);
+    numBytesWritten = 0;
+    result = WriteFile(
+        pipe,
+        message.c_str(),
+        strlen(message.c_str()),
+        &numBytesWritten,
+        NULL
+    );
+
+    numBytesRead = 0;
+    result = ReadFile(
+        pipe,
+        serverText,
+        1000,
+        &numBytesRead,
+        NULL
+    );
+    if (result) {
+        serverText[numBytesRead] = '\0';
+        cout << serverText << endl;
+    }
+    else {
+        cout << "Cannot get data from server." << endl;
+    }
+    CloseHandle(pipe);
+    cout << "Done." << endl;
+    system("pause");
+    return 0;
+}
+
+bool connectToServer(HANDLE &pipe) {
     while (true) {
         pipe = CreateFile(
             L"\\\\.\\pipe\\my_pipe",
@@ -27,80 +98,10 @@ int main()
         }
         else
             break;
-        cout << "Failed to connect to th." << endl;
+        cout << "Failed to connect to the server." << endl;
 
         system("pause");
-        return 1;
-
+        return false;
     }
-    // Sending name to server 
-    cout << "Hello, you are on forum!\nPlease enter your name:" << endl;
-    string name;
-    getline(cin, name);
-    //wstring widestr = wstring(name.begin(), name.end());
-    //const wchar_t* data = widestr.c_str();
-    DWORD numBytesWritten = 0;
-    BOOL result = WriteFile(
-        pipe,
-        name.c_str(),
-        strlen(name.c_str()),
-
-        &numBytesWritten,
-        NULL
-    );
-
-    char buffer[1000];
-    string data;
-    DWORD numBytesRead = 0;
-    result = ReadFile(
-        pipe,
-        buffer,
-        1000,
-        &numBytesRead,
-        NULL
-    );
-
-    if (result) {
-        buffer[numBytesRead] = '\0';
-        cout << buffer << endl;
-    }
-    else {
-        cout << "Cannot get data from server." << endl;
-    }
-
-
-    cout << "Enter your message:" << endl;
-    string message;
-    getline(cin, message);
-    //widestr = wstring(message.begin(), message.end());
-    //data = widestr.c_str();
-    numBytesWritten = 0;
-    result = WriteFile(
-        pipe,
-        message.c_str(),
-        strlen(message.c_str()),
-        &numBytesWritten,
-        NULL
-    );
-
-    //buffer[128];
-    numBytesRead = 0;
-    result = ReadFile(
-        pipe,
-        buffer,
-        1000,
-        &numBytesRead,
-        NULL
-    );
-    if (result) {
-        buffer[numBytesRead] = '\0';
-        cout << buffer << endl;
-    }
-    else {
-        cout << "Cannot get data from server." << endl;
-    }
-    CloseHandle(pipe);
-    cout << "Done." << endl;
-    system("pause");
-    return 0;
+    return true;
 }
