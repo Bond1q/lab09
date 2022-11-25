@@ -2,6 +2,7 @@
 #include <fstream>
 #include <string>
 #include <windows.h>
+#define BUFSIZE 128
 using namespace std;
 
 bool connectToServer(HANDLE &pipe);
@@ -24,7 +25,7 @@ int main()
         NULL
     );
 
-    char serverText[1000];
+    char serverText[BUFSIZE];
     string data;
     DWORD numBytesRead = 0;
     result = ReadFile(
@@ -89,16 +90,20 @@ bool connectToServer(HANDLE &pipe) {
             NULL
         );
 
-        if (pipe == INVALID_HANDLE_VALUE)
-            break;
+        if (pipe == INVALID_HANDLE_VALUE) {
+            cout << "INVALID_HANDLE_VALUE" << endl;
+            return false;
+        }
+            
         if (GetLastError() == ERROR_PIPE_BUSY)
         {
             if (!WaitNamedPipe(L"\\\\.\\pipe\\my_pipe", NMPWAIT_USE_DEFAULT_WAIT))
                 continue;
         }
-        else
+        else {
             break;
-        cout << "Failed to connect to the server." << endl;
+
+        }
 
         system("pause");
         return false;

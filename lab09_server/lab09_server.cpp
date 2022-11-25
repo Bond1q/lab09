@@ -8,7 +8,7 @@
 #include <sstream>
 
 #define PROHIBITED_AMOUNT 3
-#define BUFSIZE 512
+#define BUFSIZE 128
 
 using namespace std;
 
@@ -121,7 +121,7 @@ DWORD WINAPI ClientThread(__in LPVOID lpvParam)
     ifstream wordsData;
     string line;
     string wordsStr = "";
-    wordsData.open("words.txt");
+    wordsData.open("Words.txt");
     int wordsArrSize = 0;
 
     if (wordsData.is_open())
@@ -159,8 +159,9 @@ DWORD WINAPI ClientThread(__in LPVOID lpvParam)
         &bytesRead,
         NULL
     );
-    cout << "\n" << "Reading message from client..." << endl;
     updateColors(p.id);
+
+    cout << "\n" << "Reading message from client..." << endl;
     if (result) {
         buffer[bytesRead] = '\0';
         cout  << "Number of read bytes: " << bytesRead << endl;
